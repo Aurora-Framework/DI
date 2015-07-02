@@ -1,7 +1,6 @@
 {
 	"name": "aurora-framework/di",
 	"license": "MIT",
-	"minimum-stability": "dev",
 	"authors": [
 		{
 			"name": "VeeeneX",
