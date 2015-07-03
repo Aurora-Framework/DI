@@ -1,6 +1,7 @@
 {
 	"name": "aurora-framework/di",
 	"license": "MIT",
+	"description": "Dependency resolver",
 	"authors": [
 		{
 			"name": "VeeeneX",
