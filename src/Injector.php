@@ -48,9 +48,9 @@ class Injector implements ResolverInterface
 
 		foreach ($parameters as $key => $value) {
 			if ($key[0] === ":") {
-				$Rule->setClassParameter($value);
+				$Rule->setParameter($value);
 			} else {
-				$Rule->setClassDependency($key, $value);
+				$Rule->setDependency($key, $value);
 			}
 		}
 		$this->rules[$alias] = $Rule;
@@ -73,9 +73,9 @@ class Injector implements ResolverInterface
 
 		foreach ($parameters as $key => $value) {
 			if ($key[0] === ":") {
-				$Rule->setMethodParameter(ltrim($key, ':'), $method);
+				$Rule->setParameter(ltrim($key, ':'), $method);
 			} else {
-				$Rule->setMethodDependency($key, $value, $method);
+				$Rule->setDependency($key, $value, $method);
 			}
 		}
 		$this->rules[$class] = $Rule;
@@ -167,12 +167,10 @@ class Injector implements ResolverInterface
 		/* Has Instance */
 		if ($shared) {
 			$hasInstance = $Rule->hasInstance;
-		}
-
-		/* Get  if rule is set to shared and has an instance for alias */
-		if ($shared && $hasInstance) {
-			/* Return instance */
-			return $Rule->Instance;
+			
+			if ($hasInstance) {
+				return $Rule->Instance;
+			}
 		}
 
 		foreach ($this->resolvers as $resolver) {
@@ -257,7 +255,7 @@ class Injector implements ResolverInterface
 
 					$ReflectionMethod = $Rule->ReflectionClass->getMethod($method);
 					$parameters = $ReflectionMethod->getParameters();
-					$values = $this->prepareParameters($parameters, $arguments, $Rule->getParameters("method", $method));
+					$values = $this->prepareParameters($parameters, $arguments, $Rule->getParameters($method));
 
 					if ($Rule->hasInstance) {
 						return $ReflectionMethod->invokeArgs($Rule->Instance, $values);

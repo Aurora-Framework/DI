@@ -15,11 +15,6 @@ class Rule
 	public $Instance;
 	public $ReflectionClass;
 
-	public $object = [
-		"parameters" => [],
-		"dependencies" => [],
-	];
-
 	public $method = [];
 
 	public function __construct($alias)
@@ -94,110 +89,50 @@ class Rule
 	}
 
 	/*
-		Class
-	 */
-	public function setClassParameter($parameter)
-	{
-		$this->object["parameters"][] = $parameter;
-	}
-
-	public function setClassParametersArray($parameters)
-	{
-		$this->object["parameters"] = $parameters;
-	}
-
-	public function getClassParameters()
-	{
-		return $this->object["parameters"];
-	}
-
-	public function getClassParameter($index)
-	{
-		return (isset($this->object["parameters"][$index])) ? $this->object["parameters"][$index] : [] ;
-	}
-
-	public function setClassDependenciesArray($dependencies)
-	{
-		$this->object["dependencies"] = $dependencies;
-	}
-
-	public function setClassDependency($dependency, $object)
-	{
-		$this->object["dependencies"][$dependency] = $object;
-	}
-
-	public function hasClassDependency($index)
-	{
-		return (isset($this->object["dependencies"][$index]));
-	}
-
-	public function getClassDependencies()
-	{
-		return $this->object["dependencies"];
-	}
-
-	public function getClassDependency($index)
-	{
-		return (isset($this->object["dependencies"][$index])) ? $this->object["dependencies"][$index] : [];
-	}
-
-	/*
 		Method
 	 */
-	public function setMethodParameter($parameter, $method = "")
+	public function setParameter($parameter, $method = "__construct")
 	{
 		$this->method[$method]["parameters"][] = $parameter;
 	}
 
-	public function setMethodParametersArray($parameters, $method = "")
+	public function setParametersArray($parameters, $method = "__construct")
 	{
 		$this->method[$method]["parameters"] = $parameters;
 	}
 
-	public function getMethodParameters($method = "")
+	public function getParameters($method = "__construct")
 	{
 		return $this->method[$method]["parameters"];
 	}
 
-	public function getMethodParameter($index, $method = "")
+	public function getParameter($index, $method = "__construct")
 	{
 		return (isset($this->method[$method]["parameters"][$index])) ? $this->method[$method]["parameters"][$index] : [] ;
 	}
 
-	public function setMethodDependenciesArray($dependencies, $method = "")
+	public function setDependenciesArray($dependencies, $method = "__construct")
 	{
 		$this->method[$method]["dependencies"] = $dependencies;
 	}
 
-	public function setMethodDependency($dependency, $object, $method = "")
+	public function setDependency($dependency, $object, $method = "__construct")
 	{
 		$this->method[$method]["dependencies"][$dependency] = $object;
 	}
 
-	public function hasMethodDependency($index, $method = "")
+	public function hasDependency($index, $method = "__construct")
 	{
 		return (isset($this->method[$method]["dependencies"][$index]));
 	}
 
-	public function getMethodDependencies($method = "")
+	public function getDependencies($method = "__construct")
 	{
 		return $this->method[$method]["dependencies"];
 	}
 
-	public function getMethodDependency($index, $method = "")
+	public function getDependency($index, $method = "__construct")
 	{
 		return (isset($this->method[$method]["dependencies"][$index])) ? $this->method[$method]["dependencies"][$index] : null;
-	}
-
-	/*
-		Get Parameters
-	 */
-	public function getParameters($type = "object", $method = null)
-	{
-		if ($method !== null) {
-			return (isset($this->{$type}[$method])) ? $this->{$type}[$method] : [];
-		} else {
-			return $this->{$type};
-		}
 	}
 }
