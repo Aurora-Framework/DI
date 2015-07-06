@@ -94,7 +94,6 @@ class Injector implements ResolverInterface
 		for ($i = 0; $i < count($parameters); $i++) {
 			$values[] = null;
 		}
-
 		foreach ($arguments as $argIndex => $argument) {
 			if (is_string($argIndex)) {
 				foreach ($parameters as $paramIndex => $parameter) {
@@ -109,6 +108,7 @@ class Injector implements ResolverInterface
 
 		$count = 0;
 		foreach ($parameters as $paramIndex => $parameter) {
+
 			/* Is parameter hinted with class? */
 			if ($class = $parameter->getClass()) {
 
@@ -220,7 +220,7 @@ class Injector implements ResolverInterface
 		}
 
 		$ReflectionParameters = $Constructor->getParameters();
-		$values = $this->prepareParameters($ReflectionParameters, $arguments, $Rule->getParameters());
+		$values = $this->prepareParameters($ReflectionParameters, $arguments, $Rule->getDefinition());
 
 		if ($shared && !$hasInstance) {
 			return $this->rules[$alias]->setInstance($ReflectionClass->newInstanceArgs($values));
@@ -257,7 +257,7 @@ class Injector implements ResolverInterface
 
 				$ReflectionMethod = $Rule->ReflectionClass->getMethod($method);
 				$parameters = $ReflectionMethod->getParameters();
-				$values = $this->prepareParameters($parameters, $arguments, $Rule->getParameters($method));
+				$values = $this->prepareParameters($parameters, $arguments, $Rule->getDefinition($method));
 
 				if ($Rule->hasInstance) {
 					return $ReflectionMethod->invokeArgs($Rule->Instance, $values);
