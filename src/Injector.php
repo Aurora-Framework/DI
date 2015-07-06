@@ -167,10 +167,12 @@ class Injector implements ResolverInterface
 		/* Has Instance */
 		if ($shared) {
 			$hasInstance = $Rule->hasInstance;
-			
-			if ($hasInstance) {
-				return $Rule->Instance;
-			}
+		}
+
+		/* Get  if rule is set to shared and has an instance for alias */
+		if ($shared && $hasInstance) {
+			/* Return instance */
+			return $Rule->Instance;
 		}
 
 		foreach ($this->resolvers as $resolver) {
@@ -218,7 +220,7 @@ class Injector implements ResolverInterface
 		}
 
 		$ReflectionParameters = $Constructor->getParameters();
-		$values = $this->prepareParameters($ReflectionParameters, $arguments, $Rule->getParameters("object"));
+		$values = $this->prepareParameters($ReflectionParameters, $arguments, $Rule->getParameters());
 
 		if ($shared && !$hasInstance) {
 			return $this->rules[$alias]->setInstance($ReflectionClass->newInstanceArgs($values));
@@ -249,21 +251,21 @@ class Injector implements ResolverInterface
 	{
 		if (isset($this->rules[$alias])) {
 
-				$Rule = $this->rules[$alias];
+			$Rule = $this->rules[$alias];
 
-				if ($Rule->getReflectionClass()->hasMethod($method)) {
+			if ($Rule->getReflectionClass()->hasMethod($method)) {
 
-					$ReflectionMethod = $Rule->ReflectionClass->getMethod($method);
-					$parameters = $ReflectionMethod->getParameters();
-					$values = $this->prepareParameters($parameters, $arguments, $Rule->getParameters($method));
+				$ReflectionMethod = $Rule->ReflectionClass->getMethod($method);
+				$parameters = $ReflectionMethod->getParameters();
+				$values = $this->prepareParameters($parameters, $arguments, $Rule->getParameters($method));
 
-					if ($Rule->hasInstance) {
-						return $ReflectionMethod->invokeArgs($Rule->Instance, $values);
-					} else {
-						return $ReflectionMethod->invokeArgs($this->make($Rule->getName()), $values);
-					}
+				if ($Rule->hasInstance) {
+					return $ReflectionMethod->invokeArgs($Rule->Instance, $values);
+				} else {
+					return $ReflectionMethod->invokeArgs($this->make($Rule->getName()), $values);
 				}
 			}
-			return false;
+		}
+		return false;
 	}
 }
