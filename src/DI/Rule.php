@@ -88,6 +88,10 @@ class Rule
 		return $this->Instance = $Instance;
 	}
 
+	public function getDefinition($method = "__construct")
+	{
+		return (isset($this->method[$method])) ? $this->method[$method] : ["parameters" => [], "dependecies" => []];
+	}
 	/*
 		Method
 	 */

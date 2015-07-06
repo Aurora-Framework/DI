@@ -90,10 +90,6 @@ class Injector implements ResolverInterface
 	{
 		$values = [];
 
-		/* Prepare all parameters that aren't set to null */
-		for ($i = 0; $i < count($parameters); $i++) {
-			$values[] = null;
-		}
 		foreach ($arguments as $argIndex => $argument) {
 			if (is_string($argIndex)) {
 				foreach ($parameters as $paramIndex => $parameter) {
@@ -112,15 +108,12 @@ class Injector implements ResolverInterface
 			/* Is parameter hinted with class? */
 			if ($class = $parameter->getClass()) {
 
-				/* Try to find it in arguments */
-				foreach ($arguments as $argIndex => $argument) {
-					if (is_object($argument)) {
-						if ($class->isInstance($argument)) {
-							$values[$paramIndex] = $argument;
-							unset($arguments[$argIndex]);
-							break;
-						}
-					}
+				$className = $class->getName();
+
+				if (isset($ruleParameters["dependencies"][$className])) {
+					$values[$paramIndex] = $ruleParameters["dependencies"][$className];
+				} else {
+					$values[$paramIndex] = $this->make($className);
 				}
 
 			/* Nope normal parameter */
@@ -132,23 +125,6 @@ class Injector implements ResolverInterface
 			}
 		}
 
-		foreach ($parameters as $paramIndex => $parameter) {
-
-			if (!isset($values[$paramIndex])) {
-
-				if ($class = $parameter->getClass()) {
-
-					if (isset($ruleParameters["dependencies"][$class->getName()])) {
-						$values[$paramIndex] = $ruleParameters["dependencies"][$class->getName()];
-					} else {
-						$values[$paramIndex] = $this->make($class->getName());
-					}
-
-				} else {
-					$values[$paramIndex] = array_shift($arguments);
-				}
-			}
-		}
 
 		return $values;
 	}
@@ -257,7 +233,7 @@ class Injector implements ResolverInterface
 
 				$ReflectionMethod = $Rule->ReflectionClass->getMethod($method);
 				$parameters = $ReflectionMethod->getParameters();
-				$values = $this->prepareParameters($parameters, $arguments, $Rule->getDefinition($method));
+				$values = $this->prepareParameters($parameters, $arguments, $Rule->getDefinition($method), $method);
 
 				if ($Rule->hasInstance) {
 					return $ReflectionMethod->invokeArgs($Rule->Instance, $values);
