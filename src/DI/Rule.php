@@ -103,12 +103,12 @@ class Rule
 
 	public function getParameters($method = "__construct")
 	{
-		return $this->method[$method]["parameters"];
+		return (isset($this->method[$method]["parameters"])) ? $this->method[$method]["parameters"] : [];
 	}
 
 	public function getParameter($index, $method = "__construct")
 	{
-		return (isset($this->method[$method]["parameters"][$index])) ? $this->method[$method]["parameters"][$index] : [] ;
+		return (isset($this->method[$method]["parameters"][$index])) ? $this->method[$method]["parameters"][$index] : [];
 	}
 
 	public function setDependenciesArray($dependencies, $method = "__construct")
@@ -128,7 +128,7 @@ class Rule
 
 	public function getDependencies($method = "__construct")
 	{
-		return $this->method[$method]["dependencies"];
+		return (isset($this->method[$method]["dependencies"])) ? $this->method[$method]["dependencies"] : [];
 	}
 
 	public function getDependency($index, $method = "__construct")
