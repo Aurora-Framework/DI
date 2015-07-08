@@ -15,26 +15,26 @@ class Injector implements ResolverInterface
 
 	public function saveReflection($alias)
 	{
-		RouteCollection::getRule($alias, true)->reflectionable = true;
+		RuleCollection::getRule($alias, true)->reflectionable = true;
 	}
 
 	public function bind($alias, $binding)
 	{
-		RouteCollection::$map[$alias] = $binding;
+		RuleCollection::$map[$alias] = $binding;
 	}
 
 	public function alias($alias, $binding)
 	{
-		RouteCollection::$map[$alias] = $binding;
+		RuleCollection::$map[$alias] = $binding;
 	}
 
 	public function share($alias)
 	{
-		if (!isset(RouteCollection::$rules[$alias])) {
-			RouteCollection::$rules[$alias] = new Rule($alias);
+		if (!isset(RuleCollection::$rules[$alias])) {
+			RuleCollection::$rules[$alias] = new Rule($alias);
 		}
 
-		RouteCollection::$rules[$alias]->shared = true;
+		RuleCollection::$rules[$alias]->shared = true;
 	}
 
 	public function define($alias, $parameters, $share = false)
@@ -50,7 +50,7 @@ class Injector implements ResolverInterface
 		}
 
 		$Rule->shared = $share;
-		RouteCollection::$rules[$alias] = $Rule;
+		RuleCollection::$rules[$alias] = $Rule;
 	}
 
 	public function defineMethod($callable = [], $parameters)
@@ -74,7 +74,7 @@ class Injector implements ResolverInterface
 				$Rule->setDependency($key, $value, $method);
 			}
 		}
-		RouteCollection::$rules[$alias] = $Rule;
+		RuleCollection::$rules[$alias] = $Rule;
 	}
 
 	public function prepareParameters($parameters, $arguments = [], $ruleParameters = [])
@@ -126,7 +126,7 @@ class Injector implements ResolverInterface
 		$alias = (string) $alias;
 		$arguments = (array) $arguments;
 
-		$Rule = RouteCollection::getRule($alias, true);
+		$Rule = RuleCollection::getRule($alias, true);
 
 		$shared = $Rule->shared;
 		$hasInstance = false;
@@ -142,9 +142,9 @@ class Injector implements ResolverInterface
 			return $Rule->Instance;
 		}
 
-		if (isset(RouteCollection::$map[$alias])) {
+		if (isset(RuleCollection::$map[$alias])) {
 
-			$binding = RouteCollection::$map[$alias];
+			$binding = RuleCollection::$map[$alias];
 
 			if (is_callable($binding)) {
 				return call_user_func_array($binding, $arguments);
@@ -169,7 +169,7 @@ class Injector implements ResolverInterface
 
 		if ($Constructor === null) {
 			$Instance = $ReflectionClass->newInstance();
-			
+
 			if ($shared && !$hasInstance) {
 				return $Rule->setInstance($Instance);
 			} else {
@@ -181,7 +181,7 @@ class Injector implements ResolverInterface
 		$parameters = $this->prepareParameters($ReflectionParameters, $arguments, $Rule->getDefinition());
 
 		if ($shared && !$hasInstance) {
-			return RouteCollection::$rules[$alias]->setInstance($ReflectionClass->newInstanceArgs($parameters));
+			return RuleCollection::$rules[$alias]->setInstance($ReflectionClass->newInstanceArgs($parameters));
 		} else {
 			return $ReflectionClass->newInstanceArgs($parameters);
 		}
@@ -189,9 +189,9 @@ class Injector implements ResolverInterface
 
 	public function callMethod($alias, $method = '', $arguments = [])
 	{
-		if (isset(RouteCollection::$rules[$alias])) {
+		if (isset(RuleCollection::$rules[$alias])) {
 
-			$Rule = RouteCollection::$rules[$alias];
+			$Rule = RuleCollection::$rules[$alias];
 
 			if ($Rule->getReflectionClass()->hasMethod($method)) {
 
