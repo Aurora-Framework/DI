@@ -37,6 +37,21 @@ class Injector implements ResolverInterface
 		RuleCollection::$rules[$alias]->shared = true;
 	}
 
+	public static function getRule($alias, $recuisive = false)
+   {
+      return (isset(RuleCollection::$rules[$alias])) ? RuleCollection::$rules[$alias] : (
+         ($recuisive === true) ? RuleCollection::$rules[$alias] = new Rule($alias) : new Rule($alias)
+      );
+   }
+
+	public static function addRule(Rule $Rule, $alias = null)
+   {
+      if ($alias === null) {
+			$alias = $Rule->alias;
+		}
+      RuleCollection::$rules[$alias] = $Rule;
+   }
+
 	public function define($alias, $parameters, $share = false)
 	{
 		$Rule = new Rule($alias);
