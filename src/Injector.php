@@ -20,12 +20,12 @@ class Injector implements ResolverInterface
 
 	public function bind($alias, $binding)
 	{
-		RuleCollection::$map[$alias] = $binding;
+		RuleCollection::$maps[$alias] = $binding;
 	}
 
 	public function alias($alias, $binding)
 	{
-		RuleCollection::$map[$alias] = $binding;
+		RuleCollection::$maps[$alias] = $binding;
 	}
 
 	public function share($alias)
@@ -142,9 +142,9 @@ class Injector implements ResolverInterface
 			return $Rule->Instance;
 		}
 
-		if (isset(RuleCollection::$map[$alias])) {
+		if (isset(RuleCollection::$maps[$alias])) {
 
-			$binding = RuleCollection::$map[$alias];
+			$binding = RuleCollection::$maps[$alias];
 
 			if (is_callable($binding)) {
 				return call_user_func_array($binding, $arguments);
