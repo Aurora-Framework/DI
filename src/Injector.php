@@ -5,44 +5,39 @@ namespace Aurora;
 use InvalidArgumentException;
 use ReflectionClass;
 use ReflectionParameter;
+
 use Aurora\DI\ResolverInterface;
 use Aurora\DI\Rule;
+use Aurora\DI\RuleCollection;
 
 class Injector implements ResolverInterface
 {
 
-	private $map = [];
-
-	private $resolvers = [];
-
-	protected $rules = [];
-
 	public function saveReflection($alias)
 	{
-		$this->getRule($alias, true)->reflectionable = true;
+		RouteCollection::getRule($alias, true)->reflectionable = true;
 	}
 
 	public function bind($alias, $binding)
 	{
-		$this->map[$alias] = $binding;
+		RouteCollection::$map[$alias] = $binding;
 	}
 
 	public function alias($alias, $binding)
 	{
-		$this->map[$alias] = $binding;
+		RouteCollection::$map[$alias] = $binding;
 	}
 
 	public function share($alias)
 	{
-		if (isset($this->rules[$alias])) {
-			$Rule = $this->rules[$alias];
-		} else {
-			$Rule = new Rule($alias);
+		if (!isset(RouteCollection::$rules[$alias])) {
+			RouteCollection::$rules[$alias] = new Rule($alias);
 		}
-		$Rule->setShared();
+
+		RouteCollection::$rules[$alias]->shared = true;
 	}
 
-	public function define($alias, $parameters)
+	public function define($alias, $parameters, $share = false)
 	{
 		$Rule = new Rule($alias);
 
@@ -53,7 +48,9 @@ class Injector implements ResolverInterface
 				$Rule->setDependency($key, $value);
 			}
 		}
-		$this->rules[$alias] = $Rule;
+
+		$Rule->shared = $share;
+		RouteCollection::$rules[$alias] = $Rule;
 	}
 
 	public function defineMethod($callable = [], $parameters)
@@ -70,7 +67,6 @@ class Injector implements ResolverInterface
 			$Rule = $this->getRule($class, true);
 		}
 
-
 		foreach ($parameters as $key => $value) {
 			if ($key[0] === ":") {
 				$Rule->setParameter(ltrim($key, ':'), $method);
@@ -78,12 +74,7 @@ class Injector implements ResolverInterface
 				$Rule->setDependency($key, $value, $method);
 			}
 		}
-		$this->rules[$class] = $Rule;
-	}
-
-	public function addResolver(ResolverInterface $resolver)
-	{
-		$this->resolvers[] = $resolver;
+		RouteCollection::$rules[$alias] = $Rule;
 	}
 
 	public function prepareParameters($parameters, $arguments = [], $ruleParameters = [])
@@ -135,7 +126,7 @@ class Injector implements ResolverInterface
 		$alias = (string) $alias;
 		$arguments = (array) $arguments;
 
-		$Rule = $this->getRule($alias);
+		$Rule = RouteCollection::getRule($alias, true);
 
 		$shared = $Rule->shared;
 		$hasInstance = false;
@@ -151,83 +142,56 @@ class Injector implements ResolverInterface
 			return $Rule->Instance;
 		}
 
-		foreach ($this->resolvers as $resolver) {
+		if (isset(RouteCollection::$map[$alias])) {
 
-			$binding = $resolver->make($alias, $arguments);
-
-			if ($binding !== null) {
-				return $binding;
-			}
-		}
-
-		if (isset($this->map[$alias])) {
-
-			$binding = $this->map[$alias];
+			$binding = RouteCollection::$map[$alias];
 
 			if (is_callable($binding)) {
-
 				return call_user_func_array($binding, $arguments);
-
-			} elseif (is_object($binding)) {
+			} else if (is_object($binding)) {
 				return $binding;
+			} else {
+				$alias =	$binding;
 			}
-		} else {
-			$binding = $alias;
 		}
 
-		$ReflectionClass = $this->getReflectionClass($binding);
+		$ReflectionClass = $Rule->getReflectionClass();
 
-		if ($Rule->reflectionable && !$Rule->hasReflectionClass()) {
+		if ($Rule->reflectionable && !$Rule->hasReflectionClass) {
 			$Rule->setReflectionClass($ReflectionClass);
 		}
 
 		if (!$ReflectionClass->isInstantiable()) {
-			throw new InvalidArgumentException("$binding is not an instantiable class");
+			throw new InvalidArgumentException("$alias is not an instantiable class");
 		}
 
 		$Constructor = $ReflectionClass->getConstructor();
 
-		if (empty($Constructor)) {
+		if ($Constructor === null) {
+			$Instance = $ReflectionClass->newInstance();
+			
 			if ($shared && !$hasInstance) {
-				return $Rule->setInstance($ReflectionClass->newInstanceArgs($values));
+				return $Rule->setInstance($Instance);
 			} else {
-				return $ReflectionClass->newInstance();
+				return $Instance;
 			}
 		}
 
 		$ReflectionParameters = $Constructor->getParameters();
-		$values = $this->prepareParameters($ReflectionParameters, $arguments, $Rule->getDefinition());
+		$parameters = $this->prepareParameters($ReflectionParameters, $arguments, $Rule->getDefinition());
 
 		if ($shared && !$hasInstance) {
-			return $this->rules[$alias]->setInstance($ReflectionClass->newInstanceArgs($values));
+			return RouteCollection::$rules[$alias]->setInstance($ReflectionClass->newInstanceArgs($parameters));
 		} else {
-			return $ReflectionClass->newInstanceArgs($values);
+			return $ReflectionClass->newInstanceArgs($parameters);
 		}
-	}
-
-	public function addRule(Rule $Rule, $alias = null)
-	{
-		if ($alias === null) {
-			$alias = $Rule->alias;
-		}
-		return $this->rules[$alias] = $Rule;
-	}
-
-	public function getReflectionClass($alias)
-	{
-		return $this->getRule($alias)->getReflectionClass();
-	}
-
-	public function getRule($alias, $recuisive = false)
-	{
-		return (isset($this->rules[$alias])) ? $this->rules[$alias] : (($recuisive === true) ? $this->rules[$alias] = new Rule($alias) : new Rule($alias));
 	}
 
 	public function callMethod($alias, $method = '', $arguments = [])
 	{
-		if (isset($this->rules[$alias])) {
+		if (isset(RouteCollection::$rules[$alias])) {
 
-			$Rule = $this->rules[$alias];
+			$Rule = RouteCollection::$rules[$alias];
 
 			if ($Rule->getReflectionClass()->hasMethod($method)) {
 
@@ -242,6 +206,7 @@ class Injector implements ResolverInterface
 				}
 			}
 		}
+
 		return false;
 	}
 }

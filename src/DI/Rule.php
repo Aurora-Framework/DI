@@ -10,6 +10,7 @@ class Rule
 	public $shared = false;
 	public $hasInstance = false;
 	public $reflectionable = false;
+	public $hasReflectionClass = false;
 
 	public $alias;
 	public $Instance;
@@ -34,12 +35,8 @@ class Rule
 
 	public function setReflectionClass(ReflectionClass $ReflectionClass)
 	{
+		$this->hasReflectionClass = true;
 		$this->ReflectionClass = $ReflectionClass;
-	}
-
-	public function setReflectionMethod(ReflectionMethod $ReflectionMethod)
-	{
-		$this->ReflectionMethod = $ReflectionMethod;
 	}
 
 	public function setReflectionable($reflectionable = true)
@@ -54,12 +51,12 @@ class Rule
 
 	public function hasReflectionClass()
 	{
-		return isset($this->ReflectionClass);
+		return $this->hasReflectionClass;
 	}
 
 	public function getReflectionClass()
 	{
-		return (isset($this->ReflectionClass)) ? $this->ReflectionClass : $this->ReflectionClass = new ReflectionClass($this->alias);
+		return ($this->hasReflectionClass) ? $this->ReflectionClass : $this->ReflectionClass = new ReflectionClass($this->alias);
 	}
 
 	public function setShared($shared = true)
