@@ -30,42 +30,22 @@ class Injector implements ResolverInterface
 
 	public function share($alias)
 	{
-		if (!isset(RuleCollection::$rules[$alias])) {
-			RuleCollection::$rules[$alias] = new Rule($alias);
-		}
-
-		RuleCollection::$rules[$alias]->shared = true;
+      RuleCollection::getRule($alias, true)->shared = true;
 	}
 
 	public static function getRule($alias, $recuisive = false)
    {
-      return (isset(RuleCollection::$rules[$alias])) ? RuleCollection::$rules[$alias] : (
-         ($recuisive === true) ? RuleCollection::$rules[$alias] = new Rule($alias) : new Rule($alias)
-      );
+		RuleCollection::getRule($alias, $recuisive);
    }
 
 	public static function addRule(Rule $Rule, $alias = null)
    {
-      if ($alias === null) {
-			$alias = $Rule->alias;
-		}
-      RuleCollection::$rules[$alias] = $Rule;
+      RuleCollection::addRule($Rule, $alias);
    }
 
 	public function define($alias, $parameters, $share = false)
 	{
-		$Rule = new Rule($alias);
-
-		foreach ($parameters as $key => $value) {
-			if ($key[0] === ":") {
-				$Rule->setParameter($value);
-			} else {
-				$Rule->setDependency($key, $value);
-			}
-		}
-
-		$Rule->shared = $share;
-		RuleCollection::$rules[$alias] = $Rule;
+		RuleCollection::define($alias, $parameters, $share);
 	}
 
 	public function defineMethod($callable = [], $parameters)
@@ -109,10 +89,10 @@ class Injector implements ResolverInterface
 		}
 
 		$count = 0;
-		foreach ($parameters as $paramIndex => $parameter) {
+		foreach ($parameters as $paramIndex => $Parameter) {
 
 			/* Is parameter hinted with class? */
-			if ($class = $parameter->getClass()) {
+			if ($class = $Parameter->getClass()) {
 
 				$className = $class->getName();
 
@@ -122,10 +102,13 @@ class Injector implements ResolverInterface
 					$values[$paramIndex] = $this->make($className);
 				}
 
-			/* Nope normal parameter */
+			/* Nope, normal parameter */
 			} else {
 				if (isset($ruleParameters["parameters"][$count])) {
 					$values[$paramIndex] = $ruleParameters["parameters"][$count];
+					$count++;
+				} else if (isset($ruleParameters["parameters"][$Parameter->getName()])) {
+					$values[$paramIndex] = $ruleParameters["parameters"][$Parameter->getName()];
 					$count++;
 				}
 			}
@@ -141,6 +124,19 @@ class Injector implements ResolverInterface
 		$alias = (string) $alias;
 		$arguments = (array) $arguments;
 
+		if (isset(RuleCollection::$maps[$alias])) {
+
+			$binding = RuleCollection::$maps[$alias];
+
+			if (is_callable($binding)) {
+				return call_user_func_array($binding, $arguments);
+			} else if (is_object($binding)) {
+				return $binding;
+			} else {
+				$alias =	$binding;
+			}
+		}
+
 		$Rule = RuleCollection::getRule($alias, true);
 
 		$shared = $Rule->shared;
@@ -155,19 +151,6 @@ class Injector implements ResolverInterface
 		if ($shared && $hasInstance) {
 			/* Return instance */
 			return $Rule->Instance;
-		}
-
-		if (isset(RuleCollection::$maps[$alias])) {
-
-			$binding = RuleCollection::$maps[$alias];
-
-			if (is_callable($binding)) {
-				return call_user_func_array($binding, $arguments);
-			} else if (is_object($binding)) {
-				return $binding;
-			} else {
-				$alias =	$binding;
-			}
 		}
 
 		$ReflectionClass = $Rule->getReflectionClass();

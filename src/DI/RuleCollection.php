@@ -22,6 +22,31 @@ class RuleCollection
       );
    }
 
+   public function define($alias, $parameters, $shared = false)
+   {
+      $Rule = self::getRule($alias, true);
+
+      foreach ($parameters as $key => $value) {
+         if ($key[0] === ":") {
+            $Rule->setParameter($value);
+         } else {
+            $Rule->setDependency($key, $value);
+         }
+      }
+
+      $Rule->shared = $shared;
+   }
+
+   public function share($alias)
+	{
+      self::getRule($alias, true)->shared = true;
+	}
+
+   public function alias($alias, $binding)
+	{
+		self::$maps[$alias] = $binding;
+	}
+
    private function __construct(){}
    private function __clone(){}
 }

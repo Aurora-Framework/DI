@@ -1,0 +1,9 @@
+{
+   "A": {
+      "alias": "AClass",
+      "shared": true,
+      "parameters": {
+         "b": "c"
+      }
+   }
+}
