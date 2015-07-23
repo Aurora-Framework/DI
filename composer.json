@@ -16,7 +16,7 @@
 		"phpunit/phpunit": "^4.7",
 		"fabpot/php-cs-fixer": "~1.9",
 		"athletic/athletic": "~0.1",
-      "aurora-framework/filesystem": "~1.0"
+      "aurora-framework/filesystem": "dev-master"
 	},
 	"autoload-dev": {
 		"psr-4": {
