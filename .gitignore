@@ -43,5 +43,4 @@ Temporary Items
 
 # Vendor
 vendor/
-tests/
 composer.lock

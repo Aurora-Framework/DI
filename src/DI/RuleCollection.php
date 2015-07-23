@@ -28,7 +28,8 @@ class RuleCollection
 
       foreach ($parameters as $key => $value) {
          if ($key[0] === ":") {
-            $Rule->setParameter($value);
+            $key[0] = "";
+            $Rule->setKeyParameter(ltrim($key), $value);
          } else {
             $Rule->setDependency($key, $value);
          }
@@ -38,6 +39,11 @@ class RuleCollection
    }
 
    public function share($alias)
+	{
+      self::getRule($alias, true)->shared = true;
+	}
+
+   public function bind($alias)
 	{
       self::getRule($alias, true)->shared = true;
 	}

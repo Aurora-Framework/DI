@@ -50,16 +50,15 @@ class Injector implements ResolverInterface
 
 	public function defineMethod($callable = [], $parameters)
 	{
-		$bind = $callable[0];
+		$alias = $callable[0];
 		$method = $callable[1];
 
 		if (is_object($bind)) {
-			$class = get_class($bind);
-			$Rule = $this->getRule($class, true);
-			$Rule->setInstance($bind);
+			$alias = get_class($alias);
+			$Rule = RuleCollection::getRule($alias, true)
+				->Instance = $bind;
 		} else {
-			$class = $bind;
-			$Rule = $this->getRule($class, true);
+			$Rule = $this->getRule($alias, true);
 		}
 
 		foreach ($parameters as $key => $value) {
@@ -69,51 +68,69 @@ class Injector implements ResolverInterface
 				$Rule->setDependency($key, $value, $method);
 			}
 		}
+
 		RuleCollection::$rules[$alias] = $Rule;
+	}
+
+	public function prepare($callback)
+	{
+		RuleCollection::getRule($alias, true)->prepare[] = $callback;
 	}
 
 	public function prepareParameters($parameters, $arguments = [], $ruleParameters = [])
 	{
 		$values = [];
+		$skip = [];
+		$count = 0;
 
-		foreach ($arguments as $argIndex => $argument) {
-			if (is_string($argIndex)) {
-				foreach ($parameters as $paramIndex => $parameter) {
-					if ($argIndex == $parameter->getName()) {
-						$values[$paramIndex] = $argument;
-						unset($arguments[$argIndex]);
-						break;
-					}
+		foreach ($parameters as $paramIndex => $Parameter) {
+			$paramName = $Parameter->getName();
+			foreach ($arguments as $argIndex => $argument) {
+				if ($argIndex === $paramName) {
+					$values[$paramIndex] = $argument;
+
+					$skip[$paramIndex] = $paramIndex;
+					//unset($arguments[$argIndex]);
+					break;
 				}
 			}
-		}
 
-		$count = 0;
-		foreach ($parameters as $paramIndex => $Parameter) {
+			if (isset($skip[$paramIndex])) continue;
 
 			/* Is parameter hinted with class? */
 			if ($class = $Parameter->getClass()) {
 
 				$className = $class->getName();
 
-				if (isset($ruleParameters["dependencies"][$className])) {
-					$values[$paramIndex] = $ruleParameters["dependencies"][$className];
+				if (isset($ruleParameters["dependencies"][$paramName])) {
+					$values[$paramIndex] = $ruleParameters["dependencies"][$paramName];
+					$count++;
+				} else if (isset($ruleParameters["parameters"][$paramName])) {
+					$values[$paramIndex] = $ruleParameters["parameters"][$paramName];
 				} else {
 					$values[$paramIndex] = $this->make($className);
 				}
 
-			/* Nope, normal parameter */
 			} else {
 				if (isset($ruleParameters["parameters"][$count])) {
 					$values[$paramIndex] = $ruleParameters["parameters"][$count];
 					$count++;
-				} else if (isset($ruleParameters["parameters"][$Parameter->getName()])) {
-					$values[$paramIndex] = $ruleParameters["parameters"][$Parameter->getName()];
+				} else if (
+					$type1 = isset($ruleParameters["parameters"][$paramName])
+					|| $type2 = isset($ruleParameters["dependencies"][$paramName])
+				) {
+					if ($type1) {
+						$values[$paramIndex] = $ruleParameters["parameters"][$paramName];
+					} else {
+						$values[$paramIndex] = $ruleParameters["dependenciess"][$paramName];
+					}
+
 					$count++;
 				}
 			}
 		}
 
+		ksort($values);
 
 		return $values;
 	}
@@ -129,9 +146,7 @@ class Injector implements ResolverInterface
 			$binding = RuleCollection::$maps[$alias];
 
 			if (is_callable($binding)) {
-				return call_user_func_array($binding, $arguments);
-			} else if (is_object($binding)) {
-				return $binding;
+				$alias = call_user_func_array($binding, $arguments);
 			} else {
 				$alias =	$binding;
 			}
@@ -149,18 +164,13 @@ class Injector implements ResolverInterface
 
 		/* Get  if rule is set to shared and has an instance for alias */
 		if ($shared && $hasInstance) {
-			/* Return instance */
-			return $Rule->Instance;
+			return $this->prepareClass($Rule->Instance, $Rule);
 		}
 
 		$ReflectionClass = $Rule->getReflectionClass();
 
-		if ($Rule->reflectionable && !$Rule->hasReflectionClass) {
-			$Rule->setReflectionClass($ReflectionClass);
-		}
-
 		if (!$ReflectionClass->isInstantiable()) {
-			throw new InvalidArgumentException("$alias is not an instantiable class");
+			throw new InvalidArgumentException("${alias} is not an instantiable class");
 		}
 
 		$Constructor = $ReflectionClass->getConstructor();
@@ -169,20 +179,30 @@ class Injector implements ResolverInterface
 			$Instance = $ReflectionClass->newInstance();
 
 			if ($shared && !$hasInstance) {
-				return $Rule->setInstance($Instance);
-			} else {
-				return $Instance;
+				$Rule->setInstance($Instance);
 			}
+
+			return $this->prepareClass($Instance, $Rule);
 		}
 
 		$ReflectionParameters = $Constructor->getParameters();
 		$parameters = $this->prepareParameters($ReflectionParameters, $arguments, $Rule->getDefinition());
+		$Instance = $ReflectionClass->newInstanceArgs($parameters);
 
 		if ($shared && !$hasInstance) {
-			return RuleCollection::$rules[$alias]->setInstance($ReflectionClass->newInstanceArgs($parameters));
-		} else {
-			return $ReflectionClass->newInstanceArgs($parameters);
+			RuleCollection::$rules[$alias]->Instance = $Instance;
 		}
+
+		return $this->prepareClass($Instance, $Rule);
+	}
+
+	public function prepareClass($Instance, $Rule)
+	{
+		foreach ($Rule->prepare as $callable) {
+			$callable(...$Instance);
+		}
+
+		return $Instance;
 	}
 
 	public function callMethod($alias, $method = '', $arguments = [])

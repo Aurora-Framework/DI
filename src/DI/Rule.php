@@ -16,6 +16,7 @@ class Rule
 	public $Instance;
 	public $ReflectionClass;
 
+	public $prepare = [];
 	public $method = [];
 
 	public function __construct($alias)
@@ -37,11 +38,15 @@ class Rule
 	{
 		$this->hasReflectionClass = true;
 		$this->ReflectionClass = $ReflectionClass;
+
+		return $this;
 	}
 
 	public function setReflectionable($reflectionable = true)
 	{
-		return $this->reflectionable = $reflectionable;
+		$this->reflectionable = $reflectionable;
+
+		return $this;
 	}
 
 	public function isReflectionable()
@@ -62,6 +67,8 @@ class Rule
 	public function setShared($shared = true)
 	{
 		$this->shared = $shared;
+
+		return $this;
 	}
 
 	public function isShared()
@@ -82,24 +89,38 @@ class Rule
 	public function setInstance($Instance)
 	{
 		$this->hasInstance = true;
-		return $this->Instance = $Instance;
+		$this->Instance = $Instance;
+
+		return $this;
 	}
 
 	public function getDefinition($method = "__construct")
 	{
 		return (isset($this->method[$method])) ? $this->method[$method] : ["parameters" => [], "dependecies" => []];
 	}
+
 	/*
 		Method
 	 */
 	public function setParameter($parameter, $method = "__construct")
 	{
 		$this->method[$method]["parameters"][] = $parameter;
+
+		return $this;
+	}
+
+	public function setKeyParameter($key, $parameter, $method = "__construct")
+	{
+		$this->method[$method]["parameters"][$key] = $parameter;
+
+		return $this;
 	}
 
 	public function setParametersArray($parameters, $method = "__construct")
 	{
 		$this->method[$method]["parameters"] = $parameters;
+
+		return $this;
 	}
 
 	public function getParameters($method = "__construct")
@@ -115,11 +136,15 @@ class Rule
 	public function setDependenciesArray($dependencies, $method = "__construct")
 	{
 		$this->method[$method]["dependencies"] = $dependencies;
+
+		return $this;
 	}
 
 	public function setDependency($dependency, $object, $method = "__construct")
 	{
 		$this->method[$method]["dependencies"][$dependency] = $object;
+
+		return $this;
 	}
 
 	public function hasDependency($index, $method = "__construct")
