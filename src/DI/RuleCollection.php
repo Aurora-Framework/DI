@@ -22,7 +22,7 @@ class RuleCollection
       );
    }
 
-   public function define($alias, $parameters, $shared = false)
+   public static function define($alias, $parameters, $shared = false)
    {
       $Rule = self::getRule($alias, true);
 
@@ -38,17 +38,17 @@ class RuleCollection
       $Rule->shared = $shared;
    }
 
-   public function share($alias)
+   public static function share($alias)
 	{
       self::getRule($alias, true)->shared = true;
 	}
 
-   public function bind($alias)
+   public static function bind($alias)
 	{
       self::getRule($alias, true)->shared = true;
 	}
 
-   public function alias($alias, $binding)
+   public static function alias($alias, $binding)
 	{
 		self::$maps[$alias] = $binding;
 	}
