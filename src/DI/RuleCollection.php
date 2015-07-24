@@ -28,7 +28,8 @@ class RuleCollection
 
       foreach ($parameters as $key => $value) {
          if ($key[0] === ":") {
-            $Rule->setKeyParameter(ltrim($key, ':'), $value);
+            $key[0] = "";
+            $Rule->setKeyParameter(ltrim($key), $value);
          } else {
             $Rule->setDependency($key, $value);
          }
@@ -36,30 +37,6 @@ class RuleCollection
 
       $Rule->shared = $shared;
    }
-   
-   public function defineMethod($callable = [], $parameters)
-	{
-		$alias = $callable[0];
-		$method = $callable[1];
-
-		if (is_object($bind)) {
-			$alias = get_class($alias);
-			$Rule = RuleCollection::getRule($alias, true)
-				->Instance = $bind;
-		} else {
-			$Rule = $this->getRule($alias, true);
-		}
-
-		foreach ($parameters as $key => $value) {
-			if ($key[0] === ":") {
-				$Rule->setParameter(ltrim($key, ':'), $method);
-			} else {
-				$Rule->setDependency($key, $value, $method);
-			}
-		}
-
-		RuleCollection::$rules[$alias] = $Rule;
-	}
 
    public static function share($alias)
 	{

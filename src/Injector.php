@@ -12,6 +12,7 @@ use Aurora\DI\RuleCollection;
 
 class Injector implements ResolverInterface
 {
+
 	public function saveReflection($alias)
 	{
 		RuleCollection::getRule($alias, true)->reflectionable = true;
@@ -49,7 +50,26 @@ class Injector implements ResolverInterface
 
 	public function defineMethod($callable = [], $parameters)
 	{
-		RuleCollection::defineMethod($callable, $parameters);
+		$alias = $callable[0];
+		$method = $callable[1];
+
+		if (is_object($bind)) {
+			$alias = get_class($alias);
+			$Rule = RuleCollection::getRule($alias, true)
+				->Instance = $bind;
+		} else {
+			$Rule = $this->getRule($alias, true);
+		}
+
+		foreach ($parameters as $key => $value) {
+			if ($key[0] === ":") {
+				$Rule->setParameter(ltrim($key, ':'), $method);
+			} else {
+				$Rule->setDependency($key, $value, $method);
+			}
+		}
+
+		RuleCollection::$rules[$alias] = $Rule;
 	}
 
 	public function prepare($callback)
@@ -70,6 +90,7 @@ class Injector implements ResolverInterface
 					$values[$paramIndex] = $argument;
 
 					$skip[$paramIndex] = $paramIndex;
+					//unset($arguments[$argIndex]);
 					break;
 				}
 			}
@@ -155,7 +176,7 @@ class Injector implements ResolverInterface
 		$Constructor = $ReflectionClass->getConstructor();
 
 		if ($Constructor === null) {
-			$Instance = $this->prepareClass($ReflectionClass->newInstance(), $Rule);
+			$Instance = $ReflectionClass->newInstance();
 
 			if ($shared && !$hasInstance) {
 				$Rule->setInstance($Instance);
@@ -166,7 +187,7 @@ class Injector implements ResolverInterface
 
 		$ReflectionParameters = $Constructor->getParameters();
 		$parameters = $this->prepareParameters($ReflectionParameters, $arguments, $Rule->getDefinition());
-		$Instance = $this->prepareClass($ReflectionClass->newInstanceArgs($parameters), $Rule);
+		$Instance = $ReflectionClass->newInstanceArgs($parameters);
 
 		if ($shared && !$hasInstance) {
 			RuleCollection::$rules[$alias]->Instance = $Instance;
