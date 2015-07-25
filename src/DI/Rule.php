@@ -16,7 +16,7 @@ class Rule
 	public $ReflectionClass;
 
 	public $prepare = [];
-	public $parents = [];
+	public $parents = null;
 	public $method = [];
 
 	public function __construct($alias)
