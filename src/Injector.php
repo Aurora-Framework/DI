@@ -52,17 +52,17 @@ class Injector implements ResolverInterface
 		RuleCollection::defineMethod($callable, $parameters);
 	}
 
-	public function prepare($callback)
+	public function prepare($alias, $callback)
 	{
-		RuleCollection::getRule($alias, true)->prepare[] = $callback;
+		$Rule = RuleCollection::getRule($alias, true);
+		$Rule->prepare[] = $callback;
+		RuleCollection::$rules[$alias] = $Rule;
 	}
 
 	public function prepareParameters($parameters, $arguments = [], $ruleParameters = [])
 	{
 		$values = [];
 		$skip = [];
-		$count = 0;
-
 		foreach ($parameters as $paramIndex => $Parameter) {
 			$paramName = $Parameter->getName();
 			foreach ($arguments as $argIndex => $argument) {
@@ -83,7 +83,6 @@ class Injector implements ResolverInterface
 
 				if (isset($ruleParameters["dependencies"][$paramName])) {
 					$values[$paramIndex] = $ruleParameters["dependencies"][$paramName];
-					$count++;
 				} else if (isset($ruleParameters["parameters"][$paramName])) {
 					$values[$paramIndex] = $ruleParameters["parameters"][$paramName];
 				} else {
@@ -91,10 +90,7 @@ class Injector implements ResolverInterface
 				}
 
 			} else {
-				if (isset($ruleParameters["parameters"][$count])) {
-					$values[$paramIndex] = $ruleParameters["parameters"][$count];
-					$count++;
-				} else if (
+				if (
 					$type1 = isset($ruleParameters["parameters"][$paramName])
 					|| $type2 = isset($ruleParameters["dependencies"][$paramName])
 				) {
@@ -103,13 +99,9 @@ class Injector implements ResolverInterface
 					} else {
 						$values[$paramIndex] = $ruleParameters["dependenciess"][$paramName];
 					}
-
-					$count++;
 				}
 			}
 		}
-
-		ksort($values);
 
 		return $values;
 	}
@@ -172,16 +164,33 @@ class Injector implements ResolverInterface
 			RuleCollection::$rules[$alias]->Instance = $Instance;
 		}
 
-		return $this->prepareClass($Instance, $Rule);
+		return $Instance;
 	}
 
 	public function prepareClass($Instance, $Rule)
 	{
+
 		foreach ($Rule->prepare as $callable) {
-			$callable(...$Instance);
+			$callable($Instance);
 		}
 
 		return $Instance;
+	}
+
+	public function findParents($Rule)
+	{
+		$parents = [];
+
+		if ($Rule->parents === null) {
+			$ReflectionClass = $Rule->getReflectionClass();
+
+			while ($Parent = $ReflectionClass->getParentClass()) {
+				$parents[] = $Parent->getName();
+				$ReflectionClass = $Parent;
+			}
+		}
+
+		$Rule->parents = $parents;
 	}
 
 	public function callMethod($alias, $method = '', $arguments = [])
