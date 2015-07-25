@@ -124,7 +124,8 @@ class Injector implements ResolverInterface
 		}
 
 		$Rule = RuleCollection::getRule($alias, true);
-
+		$this->findParents($Rule);
+		
 		$shared = $Rule->shared;
 		$hasInstance = false;
 
