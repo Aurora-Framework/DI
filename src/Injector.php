@@ -54,9 +54,7 @@ class Injector implements ResolverInterface
 
 	public function prepare($alias, $callback)
 	{
-		$Rule = RuleCollection::getRule($alias, true);
-		$Rule->prepare[] = $callback;
-		RuleCollection::$rules[$alias] = $Rule;
+		RuleCollection::prepare($alias, $callback);
 	}
 
 	public function prepareParameters($parameters, $arguments = [], $ruleParameters = [])
@@ -125,7 +123,7 @@ class Injector implements ResolverInterface
 
 		$Rule = RuleCollection::getRule($alias, true);
 		$this->findParents($Rule);
-		
+
 		$shared = $Rule->shared;
 		$hasInstance = false;
 
@@ -170,9 +168,14 @@ class Injector implements ResolverInterface
 
 	public function prepareClass($Instance, $Rule)
 	{
-
 		foreach ($Rule->prepare as $callable) {
 			$callable($Instance);
+		}
+		foreach ($Rule->parents as $alias) {
+			$Rule = RuleCollection::getRule($alias, true);
+			foreach ($Rule->prepare as $callable) {
+				$callable($Instance);
+			}
 		}
 
 		return $Instance;

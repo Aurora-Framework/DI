@@ -36,7 +36,7 @@ class RuleCollection
 
       $Rule->shared = $shared;
    }
-   
+
    public function defineMethod($callable = [], $parameters)
 	{
 		$alias = $callable[0];
@@ -58,7 +58,7 @@ class RuleCollection
 			}
 		}
 
-		RuleCollection::$rules[$alias] = $Rule;
+		self::$rules[$alias] = $Rule;
 	}
 
    public static function share($alias)
@@ -74,6 +74,13 @@ class RuleCollection
    public static function alias($alias, $binding)
 	{
 		self::$maps[$alias] = $binding;
+	}
+
+   public static function prepare($alias, $callback)
+	{
+		$Rule = self::getRule($alias, true);
+		$Rule->prepare[] = $callback;
+		self::$rules[$alias] = $Rule;
 	}
 
    private function __construct(){}
